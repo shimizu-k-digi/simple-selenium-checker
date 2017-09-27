@@ -179,9 +179,18 @@ export default class Checker
     if(!promise){
       promise = Promise.resolve()
     }
-
     scenario.forEach(item => {
-      if(item.scenario){
+      if(item.foreach){
+        promise = promise.then(() => {
+          return this.driver.findElements(item.foreach).then(elem => {
+            elem.forEach(child => {
+              return child.click().then(() => {
+                this.run(item.scenario)
+              })
+            })
+          })
+        })
+      } else if(item.scenario) {
         promise = this.run(item.scenario, promise)
       } else {
         //directive count check.
@@ -196,7 +205,6 @@ export default class Checker
         }
 
         item = this._applyPlaceholder(item)
-
         //execif
         if(item.execif){
           promise = promise.then(() => this._testExecif(item.execif))
