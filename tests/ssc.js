@@ -1295,4 +1295,39 @@ test.describe('SSC', () => {
       })
     })
   })
+
+  test.it('Should keep looping until the target is last', () => {
+    const checker = new Checker(driver)
+    return Promise.resolve().then(() => {
+      return checker.run([
+        {url: "http://127.0.0.1:8080/"},
+        {foreach: By.css(".form-group li a"), 
+          scenario:[
+            {execif: [ 
+              [{exists: By.css('#home')}],
+              [{bool: true}], 
+            ]},
+            {assertions:[
+              {equals: By.css(".main .col-sm-6:nth-child(1) h3"), value: "Home 001"},
+            ]}
+          ]
+        },
+      ]).then(() => {
+        return checker.run([
+          {url: "http://127.0.0.1:8080/options.html"},
+          {foreach: By.css("#select-link option"), 
+            scenario:[
+              {execif: [ 
+                [{exists: By.css('#foo')}],
+                [{bool: true}], 
+              ]},
+              {assertions:[
+                {equals: By.css(".main .col-sm-6:nth-child(2) h3"), value: "Foo 002"},
+              ]}
+            ]
+          },
+        ])
+      })
+    })
+  })
 })
