@@ -1300,29 +1300,35 @@ test.describe('SSC', () => {
     const checker = new Checker(driver)
     return Promise.resolve().then(() => {
       return checker.run([
-        {url: "http://127.0.0.1:8080/"},
-        {foreach: By.css(".form-group li a"), 
+        {url: "http://127.0.0.1:8080/foreach.html"},
+        {foreach: By.css("#foreach-test li>a"), 
           scenario:[
             {execif: [ 
-              [{exists: By.css('#home')}],
+              [{exists: By.css('#contents')}],
               [{bool: true}], 
             ]},
             {assertions:[
-              {equals: By.css(".main .col-sm-6:nth-child(1) h3"), value: "Home 001"},
+              {likes: By.css("#contents span"), value: "This page is foreach-detail"},
+            ]},
+            {actions:[
+              {click: By.css("#contents a")},
             ]}
           ]
         },
       ]).then(() => {
         return checker.run([
-          {url: "http://127.0.0.1:8080/options.html"},
+          {url: "http://127.0.0.1:8080/foreach.html"},
           {foreach: By.css("#select-link option"), 
             scenario:[
               {execif: [ 
-                [{exists: By.css('#foo')}],
+                [{exists: By.css('#contents')}],
                 [{bool: true}], 
               ]},
               {assertions:[
-                {equals: By.css(".main .col-sm-6:nth-child(2) h3"), value: "Foo 002"},
+                {likes: By.css("#contents span"), value: "This page is foreach-detail"},
+              ]},
+              {actions:[
+                {click: By.css("#contents a")},
               ]}
             ]
           },
