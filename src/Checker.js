@@ -175,21 +175,29 @@ export default class Checker
     return promise
   }
 
+  _execForeach(elems, item){
+    let promise = Promise.resolve()
+    let count = 1;
+    elems.forEach(elem => {
+      promise = promise
+        .then(() => this.waitElement(By.css("#select-link option:nth-child("+ count + ")"), 1000))
+        .then(elem => elem.click())
+        .then(() => this.run(item.scenario))
+        .then(() => count += 1)
+    })
+
+    return promise
+  }
+
   run(scenario, promise){
     if(!promise){
       promise = Promise.resolve()
     }
     scenario.forEach(item => {
       if(item.foreach){
-        promise = promise.then(() => {
-          return this.driver.findElements(item.foreach).then(elem => {
-            elem.forEach(child => {
-              return child.click().then(() => {
-                this.run(item.scenario)
-              })
-            })
-          })
-        })
+        promise = promise
+          .then(() => this.driver.findElements(item.foreach))
+          .then(elems => this._execForeach(elems, item))
       } else if(item.scenario) {
         promise = this.run(item.scenario, promise)
       } else {
