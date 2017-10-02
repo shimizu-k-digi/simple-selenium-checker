@@ -177,13 +177,12 @@ export default class Checker
 
   _execForeach(elems, item){
     let promise = Promise.resolve()
-    let count = 1;
-    elems.forEach(elem => {
+    elems.forEach((value, index) => {
       promise = promise
-        .then(() => this.waitElement(By.css("#select-link option:nth-child("+ count + ")"), 1000))
+        .then(() => this.driver.findElements(item.foreach))
+        .then(targets => targets[index])
         .then(elem => elem.click())
         .then(() => this.run(item.scenario))
-        .then(() => count += 1)
     })
 
     return promise
