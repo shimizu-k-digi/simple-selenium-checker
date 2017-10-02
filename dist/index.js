@@ -1041,42 +1041,17 @@ var Checker = function () {
       return promise;
     }
   }, {
-    key: '_execForeach',
-    value: function _execForeach(elems, item) {
-      var _this7 = this;
-
-      var promise = Promise.resolve();
-      elems.forEach(function (value, index) {
-        promise = promise.then(function () {
-          return _this7.driver.findElements(item.foreach);
-        }).then(function (targets) {
-          return targets[index];
-        }).then(function (elem) {
-          return elem.click();
-        }).then(function () {
-          return _this7.run(item.scenario);
-        });
-      });
-
-      return promise;
-    }
-  }, {
     key: 'run',
     value: function run(scenario, promise) {
-      var _this8 = this;
+      var _this7 = this;
 
       if (!promise) {
         promise = Promise.resolve();
       }
+
       scenario.forEach(function (item) {
-        if (item.foreach) {
-          promise = promise.then(function () {
-            return _this8.driver.findElements(item.foreach);
-          }).then(function (elems) {
-            return _this8._execForeach(elems, item);
-          });
-        } else if (item.scenario) {
-          promise = _this8.run(item.scenario, promise);
+        if (item.scenario) {
+          promise = _this7.run(item.scenario, promise);
         } else {
           //directive count check.
           var directives = Object.keys(item);
@@ -1089,38 +1064,39 @@ var Checker = function () {
             throw new Error("Illegal directive object. " + JSON.stringify(item));
           }
 
-          item = _this8._applyPlaceholder(item);
+          item = _this7._applyPlaceholder(item);
+
           //execif
           if (item.execif) {
             promise = promise.then(function () {
-              return _this8._testExecif(item.execif);
+              return _this7._testExecif(item.execif);
             });
           } else if (item.url) {
             //Until authenticateAs is officially supported, basic authentication is attempted based on the last displayed URL.
             //see actions.authenticateAs()
-            _this8.lastUrl = item.url;
+            _this7.lastUrl = item.url;
             promise = promise.then(function (res) {
               if (res === false) return false;
-              return _this8.driver.get(item.url);
+              return _this7.driver.get(item.url);
             });
           } else if (item.actions) {
             item.actions.forEach(function (action) {
               promise = promise.then(function (res) {
                 if (res === false) return false;
-                return _this8._detectFunction(actions, action)(_this8, action);
+                return _this7._detectFunction(actions, action)(_this7, action);
               });
             });
 
             promise = promise.then(function () {
-              return _this8.driver.getCurrentUrl().then(function (url) {
-                return _this8.lastUrl = url;
+              return _this7.driver.getCurrentUrl().then(function (url) {
+                return _this7.lastUrl = url;
               });
             });
           } else if (item.assertions) {
             item.assertions.forEach(function (check) {
               promise = promise.then(function (res) {
                 if (res === false) return false;
-                return _this8._detectFunction(assertions, check)(_this8, check);
+                return _this7._detectFunction(assertions, check)(_this7, check);
               });
             });
           }
@@ -1128,9 +1104,9 @@ var Checker = function () {
           //Check javascript and response errors using browser logs.
           promise = promise.then(function (res) {
             if (res === false) return false;
-            return _this8.driver.getCurrentUrl().then(function (url) {
+            return _this7.driver.getCurrentUrl().then(function (url) {
               return new Promise(function (resolve) {
-                _this8.driver.manage().logs().get('browser').then(function (logs) {
+                _this7.driver.manage().logs().get('browser').then(function (logs) {
                   logs.forEach(function (log) {
                     //javascript
                     if (Checker.JsErrorStrings.some(function (err) {
@@ -1156,13 +1132,13 @@ var Checker = function () {
           });
 
           //Format the error.
-          if (_this8.debug === false) {
+          if (_this7.debug === false) {
             promise = promise.catch(function (err) {
-              return _this8.driver.findElement(By.css('html')).then(function (elem) {
+              return _this7.driver.findElement(By.css('html')).then(function (elem) {
                 return elem.getAttribute('outerHTML');
               }).then(function (html) {
-                return _this8.driver.getCurrentUrl().then(function (url) {
-                  var data = Object.assign({}, _this8.data);
+                return _this7.driver.getCurrentUrl().then(function (url) {
+                  var data = Object.assign({}, _this7.data);
                   delete data.next;
                   var message = url + "\n" + "JSON: " + JSON.stringify(item) + "\n" + "Name: " + err.name + "\n" + "Message: " + err.message + "\n" + html;
                   throw new errors.VerboseError(message, err);
@@ -1199,16 +1175,16 @@ var Checker = function () {
   }, {
     key: '_applyPlaceholderToArray',
     value: function _applyPlaceholderToArray(elems) {
-      var _this9 = this;
+      var _this8 = this;
 
       var newElems = [];
       elems.forEach(function (elem) {
         if (elem.forEach) {
-          newElems.push(_this9._applyPlaceholderToArray(elem));
+          newElems.push(_this8._applyPlaceholderToArray(elem));
         } else {
           var newElem = {};
           for (var elemKey in elem) {
-            newElem[elemKey] = _this9._applyPlaceholderToValue(elem[elemKey]);
+            newElem[elemKey] = _this8._applyPlaceholderToValue(elem[elemKey]);
           }
           newElems.push(newElem);
         }
@@ -1942,6 +1918,7 @@ exports.clear = clear;
 exports.alert = alert;
 exports.switchTo = switchTo;
 exports.authenticateAs = authenticateAs;
+exports.scrollTo = scrollTo;
 
 var _seleniumWebdriver = __webpack_require__(0);
 
@@ -2168,6 +2145,18 @@ function authenticateAs(checker, action) {
       return checker.driver.get(checker.lastUrl);
     });
   });
+}
+
+function scrollTo(checker, action) {
+  if (action.scrollTo.hasOwnProperty("x") || action.scrollTo.hasOwnProperty("y")) {
+    var xcoord = action.scrollTo.hasOwnProperty("x") ? action.scrollTo.x : 0;
+    var ycoord = action.scrollTo.hasOwnProperty("y") ? action.scrollTo.y : 0;
+    return checker.driver.executeScript("window.scrollTo(" + xcoord + "," + ycoord + ")");
+  } else {
+    return checker.waitElement(action.scrollTo, action.timeout).then(function (elem) {
+      return checker.driver.executeScript("arguments[0].scrollIntoView()", elem);
+    });
+  }
 }
 
 /***/ }),
